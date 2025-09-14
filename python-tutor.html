@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Python Tutor for Kids - Levels</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font from Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Skulpt for client-side Python execution -->
+    <script src="https://skulpt.org/js/skulpt.min.js"></script>
+    <script src="https://skulpt.org/js/skulpt-stdlib.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f4f8; /* Light blue-gray background */
+      }
+      /* Custom scrollbar for textareas */
+      textarea::-webkit-scrollbar {
+        width: 8px;
+      }
+      textarea::-webkit-scrollbar-track {
+        background: #e2e8f0; /* Light gray track */
+        border-radius: 10px;
+      }
+      textarea::-webkit-scrollbar-thumb {
+        background: #94a3b8; /* Medium gray thumb */
+        border-radius: 10px;
+      }
+      textarea::-webkit-scrollbar-thumb:hover {
+        background: #64748b; /* Darker gray on hover */
+      }
+      /* Style for completed level buttons */
+      .level-button.completed {
+        background-color: #10b981; /* Green-500 */
+        color: white;
+        border-color: #059669; /* Green-600 */
+      }
+
+      /* Styles for AI response formatting */
+      #aiResponse .code-block {
+        margin: 12px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      #aiResponse .inline-code {
+        margin: 0 2px;
+      }
+
+      #aiResponse strong {
+        color: #1e40af; /* Darker blue for better contrast */
+        font-weight: 600;
+      }
+
+      #aiResponse pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col p-4 md:p-8">
+    <!-- Header -->
+    <header class="text-center mb-8">
+      <h1
+        class="text-4xl md:text-5xl font-extrabold text-blue-700 leading-tight"
+      >
+        🚀 Code Explorer AI 🧠
+      </h1>
+      <p class="text-lg text-gray-600 mt-2">
+        Your AI friend for learning Python, level by level!
+      </p>
+    </header>
+
+    <main
+      class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto w-full"
+    >
+      <section
+        class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg flex flex-col"
+      >
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">📚 Levels:</h2>
+        <div
+          id="levelNavigation"
+          class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6"
+        ></div>
+
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4 mt-4">
+          📝 Challenge: <span id="challengeTitle" class="text-blue-600"></span>
+        </h2>
+        <div
+          id="challengeDescription"
+          class="bg-blue-50 p-4 rounded-lg border border-blue-200 text-blue-800 text-base overflow-auto flex-grow mb-4"
+        >
+          Select a level to start coding!
+        </div>
+
+        <div class="mt-auto flex flex-col sm:flex-row gap-4">
+          <button
+            id="prevLevelBtn"
+            class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            disabled
+          >
+            ⬅️ Previous
+          </button>
+          <button
+            id="nextLevelBtn"
+            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            disabled
+          >
+            Next ➡️
+          </button>
+        </div>
+      </section>
+
+      <section class="lg:col-span-2 flex flex-col gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col h-full">
+          <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+            ✍️ Write Your Code Here:
+          </h2>
+          <textarea
+            id="codeEditor"
+            class="flex-grow p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-mono resize-none"
+            rows="15"
+            placeholder="Select a level to get started!"
+          ></textarea>
+
+          <div class="mt-6 flex flex-col sm:flex-row gap-4">
+            <button
+              id="runCodeBtn"
+              class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+              title="Run your code interactively - if it asks for input, you can type it!"
+            >
+              ▶️ Run Code
+            </button>
+            <button
+              id="checkAnswerBtn"
+              class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+              title="Check if your code produces the correct output (uses automatic test input)"
+            >
+              ✅ Check Answer
+            </button>
+            <button
+              id="askAIBtn"
+              class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              💡 Ask AI for Help!
+            </button>
+            <button
+              id="suggestImprovementsBtn"
+              class="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              ✨ Suggest Improvements
+            </button>
+            <button
+              id="testAIBtn"
+              class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              🔧 Test AI Connection
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col h-full">
+          <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+            🖥️ Python Terminal:
+          </h2>
+
+          <div
+            class="flex-grow bg-black rounded-lg border border-gray-300 mb-6 flex flex-col overflow-hidden"
+          >
+            <div
+              class="bg-gray-800 px-4 py-2 flex items-center justify-between"
+            >
+              <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+              </div>
+              <span class="text-gray-300 text-sm font-mono">Python 3.x</span>
+            </div>
+
+            <div class="flex-grow overflow-auto p-4">
+              <div
+                id="terminalContent"
+                class="font-mono text-sm text-green-400 leading-relaxed"
+              ></div>
+            </div>
+          </div>
+
+          <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+            🤖 AI Tutor Says:
+          </h2>
+          <div
+            id="aiResponse"
+            class="bg-blue-50 p-4 rounded-lg border border-blue-200 text-blue-800 text-base overflow-auto flex-grow leading-relaxed"
+            style="line-height: 1.6"
+          >
+            🤖✨ Hi there, young coder! I'm your friendly AI coding buddy! 🚀
+            Pick a level, write some awesome Python code, and I'll help you
+            learn! Click "Ask AI for Help!" whenever you need a friend to guide
+            you through coding challenges. Remember: Making mistakes is how we
+            learn to be amazing programmers! Let's have fun coding together!
+            🎮💻
+          </div>
+          <div
+            id="loadingIndicator"
+            class="hidden mt-4 text-center text-blue-600 font-semibold"
+          >
+            Thinking... 🤔
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="text-center mt-8 text-gray-500 text-sm">
+      <p>&copy; 2025 AI Python Tutor. Made with ❤️ for young coders.</p>
+    </footer>
+
+    <script>
+      const AI_CONFIG = {
+        // Set to 'gemini' for Google Gemini API or 'local' for local OpenAI-compatible model
+        provider: "local", // Change this to 'local' to use local model
+
+        // Gemini API configuration
+        gemini: {
+          apiKey: "", // Canvas will provide this API key at runtime
+          baseUrl:
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        },
+
+        // Local OpenAI-compatible model configuration
+        local: {
+          // Try direct connection first (requires CORS enabled in LM Studio)
+          // baseUrl: "http://127.0.0.1:1234/v1/chat/completions",
+          // If CORS issues, use the proxy:
+          baseUrl: "http://127.0.0.1:8000/v1/chat/completions",
+          model: "google/gemma-3-12b", // You can change this to match your local model name
+          apiKey: "not-needed", // Some local servers expect this field but ignore the value
+        },
+      };
+
+      const codeEditor = document.getElementById("codeEditor");
+      const aiResponse = document.getElementById("aiResponse");
+      const runCodeBtn = document.getElementById("runCodeBtn");
+      const checkAnswerBtn = document.getElementById("checkAnswerBtn");
+      const askAIBtn = document.getElementById("askAIBtn");
+      const suggestImprovementsBtn = document.getElementById(
+        "suggestImprovementsBtn"
+      );
+      const testAIBtn = document.getElementById("testAIBtn");
+      const loadingIndicator = document.getElementById("loadingIndicator");
+      const levelNavigation = document.getElementById("levelNavigation");
+      const challengeTitle = document.getElementById("challengeTitle");
+      const challengeDescription = document.getElementById(
+        "challengeDescription"
+      );
+      const prevLevelBtn = document.getElementById("prevLevelBtn");
+      const nextLevelBtn = document.getElementById("nextLevelBtn");
+
+      const terminalContent = document.getElementById("terminalContent");
+
+      const challenges = [
+        {
+          id: 1,
+          title: "Hello World!",
+          description:
+            "Your first Python challenge! Make the computer say 'Hello, World!' using the print() function.",
+          initialCode: "",
+          expectedOutput: "Hello, World!\n",
+        },
+        {
+          id: 2,
+          title: "Print a variable",
+          description:
+            "Create a variable called `var` and set it to 25. Then print it out!",
+          initialCode: "",
+          expectedOutput: "25\n",
+        },
+        {
+          id: 3,
+          title: "Simple Math",
+          description:
+            "Create two variables: `a = 8` and `b = 5`. Then print the result of adding them together.",
+          initialCode: "",
+          expectedOutput: "13\n",
+        },
+        {
+          id: 4,
+          title: "Multiple Messages",
+          description:
+            "Print three different messages on separate lines: 'I love coding!', 'Python is fun!', and 'Let's keep learning!'",
+          initialCode: "",
+          expectedOutput:
+            "I love coding!\nPython is fun!\nLet's keep learning!\n",
+        },
+        {
+          id: 5,
+          title: "For Loop - Count to 5",
+          description:
+            "Use a `for` loop with `range(1, 6)` to print numbers from 1 to 5, each on a new line.",
+          initialCode: "",
+          expectedOutput: "1\n2\n3\n4\n5\n",
+        },
+        {
+          id: 6,
+          title: "For Loop - Print Stars",
+          description:
+            "Use a `for` loop to print the star symbol (*) exactly 4 times, each on a new line.",
+          initialCode: "",
+          expectedOutput: "*\n*\n*\n*\n",
+        },
+        {
+          id: 7,
+          title: "While Loop - Countdown",
+          description:
+            "Create a variable `count = 5` and use a while loop to print numbers counting down from 5 to 1, each on a new line.",
+          initialCode: "",
+          expectedOutput: "5\n4\n3\n2\n1\n",
+        },
+        {
+          id: 8,
+          title: "While Loop - Even Numbers",
+          description:
+            "Use a while loop to print the first 4 even numbers (2, 4, 6, 8), each on a new line. Start with `num = 2`.",
+          initialCode: "",
+          expectedOutput: "2\n4\n6\n8\n",
+        },
+      ];
+
+      let currentLevelIndex = 0;
+      let completedLevels = new Set();
+      let lastError = null;
+
+      let skulptOutput = "";
+      let skulptInputQueue = [];
+      let pendingInputPromise = null;
+
+      function appendToTerminal(text, className = "text-green-400") {
+        const span = document.createElement("span");
+        span.className = className;
+        span.textContent = text;
+        terminalContent.appendChild(span);
+
+        const terminalContainer = terminalContent.parentElement;
+        terminalContainer.scrollTop = terminalContainer.scrollHeight;
+      }
+
+      function clearTerminal() {
+        terminalContent.innerHTML = "";
+      }
+
+      function outf(text) {
+        skulptOutput += text;
+        appendToTerminal(text, "text-green-400");
+      }
+
+      function builtinRead(x) {
+        if (
+          Sk.builtinFiles === undefined ||
+          Sk.builtinFiles["files"][x] === undefined
+        ) {
+          throw "File not found: '" + x + "'";
+        }
+        return Sk.builtinFiles["files"][x];
+      }
+
+      function customInputFunction(prompt) {
+        if (skulptInputQueue.length > 0) {
+          const testInput = skulptInputQueue.shift();
+
+          if (prompt) {
+            appendToTerminal(prompt, "text-blue-300");
+          }
+          appendToTerminal(testInput + "\n", "text-yellow-300");
+          return testInput;
+        }
+
+        return new Promise((resolve) => {
+          const inputContainer = document.createElement("span");
+
+          if (prompt) {
+            const promptSpan = document.createElement("span");
+            promptSpan.className = "text-blue-300";
+            promptSpan.textContent = prompt;
+            inputContainer.appendChild(promptSpan);
+          }
+
+          const input = document.createElement("input");
+          input.className =
+            "bg-transparent text-yellow-300 outline-none border-none font-mono";
+          input.style.display = "inline";
+          input.style.width = "auto";
+          input.style.minWidth = "100px";
+          input.autocomplete = "off";
+          input.spellcheck = false;
+
+          const cursor = document.createElement("span");
+          cursor.className = "text-yellow-300 animate-pulse";
+          cursor.textContent = "|";
+
+          inputContainer.appendChild(input);
+          inputContainer.appendChild(cursor);
+          terminalContent.appendChild(inputContainer);
+
+          const terminalContainer = terminalContent.parentElement;
+          terminalContainer.scrollTop = terminalContainer.scrollHeight;
+          input.focus();
+
+          const handleSubmit = () => {
+            const value = input.value;
+
+            cursor.remove();
+            input.disabled = true;
+            input.style.color = "#fde047";
+
+            const newline = document.createElement("span");
+            newline.textContent = "\n";
+            inputContainer.appendChild(newline);
+
+            input.removeEventListener("keydown", handleKeyDown);
+
+            resolve(value);
+          };
+
+          const handleKeyDown = (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSubmit();
+            }
+          };
+
+          const resizeInput = () => {
+            input.style.width =
+              Math.max(100, (input.value.length + 1) * 8) + "px";
+          };
+
+          input.addEventListener("keydown", handleKeyDown);
+          input.addEventListener("input", resizeInput);
+
+          resizeInput();
+        });
+      }
+
+      function runPythonCode(forCheck = false) {
+        clearTerminal();
+        skulptOutput = "";
+        skulptInputQueue = [];
+        lastError = null;
+
+        const currentChallenge = challenges[currentLevelIndex];
+        if (forCheck && currentChallenge && currentChallenge.testInput) {
+          skulptInputQueue.push(currentChallenge.testInput);
+        }
+
+        if (!forCheck) {
+          aiResponse.textContent =
+            "Running your code... (If your code asks for input, you can type directly in the terminal!)";
+        }
+
+        return new Promise((resolve, reject) => {
+          Sk.configure({
+            output: outf,
+            read: builtinRead,
+            inputfun: customInputFunction,
+          });
+
+          try {
+            Sk.importMainWithBody("<stdin>", false, codeEditor.value, true);
+
+            if (!forCheck) {
+              aiResponse.textContent =
+                "Code executed successfully! Check the terminal output above.";
+            }
+            resolve(skulptOutput);
+          } catch (e) {
+            lastError = e.toString();
+            appendToTerminal(
+              "Traceback (most recent call last):\n",
+              "text-red-400"
+            );
+            appendToTerminal("  " + lastError + "\n", "text-red-400");
+            if (!forCheck) {
+              aiResponse.textContent = `Oops! There was an error in your code. Click "Ask AI for Help!" to understand it better.`;
+            }
+            resolve(null);
+          }
+        });
+      }
+
+      function formatAIResponse(text) {
+        text = text.replace(
+          /```python\n?([\s\S]*?)```/g,
+          '<div class="code-block bg-gray-800 text-green-400 p-3 rounded-lg my-3 font-mono text-sm overflow-x-auto"><pre>$1</pre></div>'
+        );
+
+        text = text.replace(
+          /```([\s\S]*?)```/g,
+          '<div class="code-block bg-gray-800 text-green-400 p-3 rounded-lg my-3 font-mono text-sm overflow-x-auto"><pre>$1</pre></div>'
+        );
+
+        text = text.replace(
+          /`([^`]+)`/g,
+          '<span class="inline-code bg-gray-200 text-gray-800 px-2 py-1 rounded font-mono text-sm">$1</span>'
+        );
+
+        text = text.replace(/\*([^*]+)\*/g, "<strong>$1</strong>");
+
+        return text;
+      }
+
+      async function callAI(prompt, onToken = null) {
+        let payload, apiUrl, headers;
+
+        if (AI_CONFIG.provider === "gemini") {
+          const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+          payload = { contents: chatHistory };
+          apiUrl = `${AI_CONFIG.gemini.baseUrl}?key=${AI_CONFIG.gemini.apiKey}`;
+          headers = { "Content-Type": "application/json" };
+        } else if (AI_CONFIG.provider === "local") {
+          const messages = [{ role: "user", content: prompt }];
+          payload = {
+            model: AI_CONFIG.local.model,
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 1000,
+            stream: onToken ? true : false,
+          };
+          apiUrl = AI_CONFIG.local.baseUrl;
+          headers = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${AI_CONFIG.local.apiKey}`,
+          };
+        } else {
+          throw new Error(`Unknown AI provider: ${AI_CONFIG.provider}`);
+        }
+
+        console.log("Making AI API call to:", apiUrl);
+        console.log("Headers:", headers);
+        console.log("Payload:", JSON.stringify(payload, null, 2));
+
+        try {
+          const requestBody = JSON.stringify(payload);
+          console.log("Request body length:", requestBody.length);
+          console.log(
+            "Request body (first 200 chars):",
+            requestBody.substring(0, 200)
+          );
+
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: headers,
+            body: requestBody,
+          });
+
+          console.log("Response status:", response.status);
+          console.log(
+            "Response headers:",
+            Object.fromEntries(response.headers)
+          );
+
+          if (!response.ok) {
+            let errorData;
+            try {
+              errorData = await response.json();
+            } catch (e) {
+              errorData = await response.text();
+            }
+            console.log("Error response:", errorData);
+            throw new Error(
+              `API error: ${response.status} ${
+                response.statusText
+              } - ${JSON.stringify(errorData)}`
+            );
+          }
+
+          if (AI_CONFIG.provider === "local" && onToken && payload.stream) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullResponse = "";
+
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split("\n");
+
+                for (const line of lines) {
+                  if (line.startsWith("data: ")) {
+                    const data = line.slice(6);
+                    if (data === "[DONE]") {
+                      return fullResponse;
+                    }
+
+                    try {
+                      const json = JSON.parse(data);
+                      if (
+                        json.choices &&
+                        json.choices[0] &&
+                        json.choices[0].delta
+                      ) {
+                        const content = json.choices[0].delta.content;
+                        if (content) {
+                          fullResponse += content;
+                          onToken(content); // Call the streaming callback
+                        }
+                      }
+                    } catch (e) {
+                      console.log("Skipping malformed chunk:", data);
+                    }
+                  }
+                }
+              }
+              return fullResponse;
+            } finally {
+              reader.releaseLock();
+            }
+          }
+
+          const result = await response.json();
+          console.log("API response:", result);
+
+          if (AI_CONFIG.provider === "gemini") {
+            if (
+              result.candidates &&
+              result.candidates.length > 0 &&
+              result.candidates[0].content &&
+              result.candidates[0].content.parts &&
+              result.candidates[0].content.parts.length > 0
+            ) {
+              return result.candidates[0].content.parts[0].text;
+            } else {
+              throw new Error(
+                "Unexpected Gemini API response structure: " +
+                  JSON.stringify(result)
+              );
+            }
+          } else if (AI_CONFIG.provider === "local") {
+            if (
+              result.choices &&
+              result.choices.length > 0 &&
+              result.choices[0].message &&
+              result.choices[0].message.content
+            ) {
+              return result.choices[0].message.content;
+            } else {
+              throw new Error(
+                "Unexpected local API response structure: " +
+                  JSON.stringify(result)
+              );
+            }
+          }
+        } catch (error) {
+          console.error("Error calling AI:", error);
+          throw error;
+        }
+      }
+
+      async function testAIConnection() {
+        loadingIndicator.classList.remove("hidden");
+        aiResponse.innerHTML =
+          "✅ AI Connection Test Starting...<br><br>AI Response: ";
+
+        const testPrompt =
+          "Hi there! 🤖✨ I'm testing our connection. Please respond with 'Connection successful!' and introduce yourself as a friendly AI coding mentor for kids who loves to help them learn Python. Keep it fun and encouraging!";
+
+        let accumulatedResponse = "";
+
+        try {
+          console.log("Testing AI connection...");
+
+          const onToken = (token) => {
+            accumulatedResponse += token;
+            aiResponse.innerHTML =
+              "✅ AI Connection Test Successful!<br><br>AI Response: " +
+              formatAIResponse(accumulatedResponse).replace(/\n/g, "<br>");
+          };
+
+          const response = await callAI(testPrompt, onToken);
+
+          // Final update in case streaming didn't capture everything
+          if (response && response !== accumulatedResponse) {
+            aiResponse.innerHTML =
+              "✅ AI Connection Test Successful!<br><br>AI Response: " +
+              formatAIResponse(response).replace(/\n/g, "<br>");
+          }
+
+          console.log("AI connection test passed!");
+        } catch (error) {
+          console.error("AI connection test failed:", error);
+
+          let errorMessage = "❌ AI Connection Test Failed!<br><br>";
+
+          if (
+            error.message.includes("Failed to fetch") ||
+            error.message.includes("NetworkError")
+          ) {
+            errorMessage +=
+              "Cannot connect to local AI server. Please check:<br>";
+            errorMessage += "1. Is your local AI server running?<br>";
+            errorMessage +=
+              "2. Is it running on the correct URL: " +
+              AI_CONFIG.local.baseUrl +
+              "?<br>";
+            errorMessage +=
+              "3. Check the browser console (F12) for more details.<br><br>";
+            errorMessage += "Current configuration:<br>";
+            errorMessage += "- Provider: " + AI_CONFIG.provider + "<br>";
+            errorMessage += "- URL: " + AI_CONFIG.local.baseUrl + "<br>";
+            errorMessage += "- Model: " + AI_CONFIG.local.model;
+          } else {
+            errorMessage += "Error details: " + error.message + "<br><br>";
+            errorMessage +=
+              "Check the browser console (F12) for full error information.";
+          }
+
+          aiResponse.innerHTML = errorMessage;
+        } finally {
+          loadingIndicator.classList.add("hidden");
+        }
+      }
+
+      function checkAnswer() {
+        const currentChallenge = challenges[currentLevelIndex];
+        if (!currentChallenge) {
+          aiResponse.textContent = "No challenge selected.";
+          return;
+        }
+
+        aiResponse.textContent = "Checking your answer...";
+        runPythonCode(true).then(function (userOutput) {
+          if (userOutput === null) {
+            aiResponse.textContent =
+              "Your code has an error. Please fix it before checking the answer.";
+            return;
+          }
+
+          const normalizedUserOutput = userOutput.trim().replace(/\r\n/g, "\n");
+          const normalizedExpectedOutput = currentChallenge.expectedOutput
+            .trim()
+            .replace(/\r\n/g, "\n");
+
+          if (normalizedUserOutput === normalizedExpectedOutput) {
+            aiResponse.textContent = "🎉 Great job! Your answer is correct! 🎉";
+            completedLevels.add(currentChallenge.id);
+            saveProgress();
+            renderLevelButtons();
+            setTimeout(() => {
+              if (currentLevelIndex < challenges.length - 1) {
+                currentLevelIndex++;
+                loadChallenge(currentLevelIndex);
+                aiResponse.textContent =
+                  "🎉 Amazing work! You're getting better and better at coding! Ready for the next adventure? Let's go! 🚀";
+              } else {
+                aiResponse.textContent =
+                  "🏆 WOW! You've completed ALL the challenges! You're officially a Python coding superhero! 🦸‍♂️🦸‍♀️ Keep coding and creating amazing things! 🌟✨";
+              }
+            }, 1500);
+          } else {
+            aiResponse.textContent = `😕 Not quite right. Your output was:\n"${userOutput.trim()}"\n\nBut I was expecting:\n"${currentChallenge.expectedOutput.trim()}"\n\nKeep trying! You can ask the AI for help.`;
+          }
+        });
+      }
+
+      async function askAIForHelp() {
+        const userCode = codeEditor.value;
+        const currentChallenge = challenges[currentLevelIndex];
+
+        if (!userCode.trim()) {
+          aiResponse.textContent =
+            "Please write some Python code before asking for help!";
+          return;
+        }
+        if (!currentChallenge) {
+          aiResponse.textContent = "Please select a challenge first!";
+          return;
+        }
+
+        loadingIndicator.classList.remove("hidden");
+        aiResponse.innerHTML = "🤖 Thinking about your code...";
+
+        const currentOutput = terminalContent.textContent || "No output yet";
+
+        let prompt = "";
+        if (lastError) {
+          prompt = `You are a friendly AI coding mentor for kids aged 8-16 learning Python! 🤖✨
+
+🎯 CHALLENGE: "${currentChallenge.title}"
+📝 TASK: ${currentChallenge.description}
+
+😅 OH NO! The young coder got this error:
+${lastError}
+
+💻 Their current code:
+\`\`\`python
+${userCode}
+\`\`\`
+
+🖥️ Current output: ${currentOutput}
+
+As their coding buddy, please:
+1. 🔍 Explain what went wrong in super simple, fun terms (like you're talking to a friend!)
+2. 🤔 Ask them a guiding question to help them think about the problem
+3. 💡 Give them a small hint or suggestion (but don't give away the full answer!)
+4. 🌟 Be encouraging and remind them that making mistakes is how we learn!
+5. 🎉 Use emojis and keep it positive and fun!
+
+Remember: Help them DISCOVER the solution, don't just tell them what to write! Think of yourself as a helpful friend, not someone doing their homework for them.`;
+        } else {
+          prompt = `You are a friendly AI coding mentor for kids aged 8-16 learning Python! 🤖✨
+
+🎯 CHALLENGE: "${currentChallenge.title}"
+📝 TASK: ${currentChallenge.description}
+
+💻 The young coder's current code:
+\`\`\`python
+${userCode}
+\`\`\`
+
+🖥️ Current output: ${currentOutput}
+
+As their coding buddy, please:
+1. 🎉 First, celebrate what they've done right so far!
+2. 🔍 Explain their code in simple, fun terms
+3. 🤔 If something needs fixing, ask them questions to guide their thinking (like "What do you think happens when..." or "Have you tried...")
+4. 💡 Give hints through questions rather than direct answers
+5. 🎯 If they're stuck, suggest the NEXT SMALL STEP they should try
+6. 🌟 Keep it encouraging and remind them they're doing great!
+7. 🎮 Use emojis and make coding feel like a fun game!
+
+Remember: You're helping them LEARN and DISCOVER, not just giving them the answer. Think like a patient teacher who wants them to have those "Aha!" moments themselves!`;
+        }
+
+        let accumulatedResponse = "";
+
+        try {
+          const onToken = (token) => {
+            accumulatedResponse += token;
+            aiResponse.innerHTML = formatAIResponse(
+              accumulatedResponse
+            ).replace(/\n/g, "<br>");
+          };
+
+          const text = await callAI(prompt, onToken);
+
+          if (text && text !== accumulatedResponse) {
+            aiResponse.innerHTML = formatAIResponse(text).replace(
+              /\n/g,
+              "<br>"
+            );
+          }
+        } catch (error) {
+          console.error("AI API Error:", error);
+
+          let errorMessage = "AI API Error: ";
+
+          if (
+            error.message.includes("Failed to fetch") ||
+            error.message.includes("NetworkError")
+          ) {
+            errorMessage +=
+              "Cannot connect to local AI server. Please check:<br>";
+            errorMessage += "1. Is your local AI server running?<br>";
+            errorMessage +=
+              "2. Is it running on the correct URL: " +
+              AI_CONFIG.local.baseUrl +
+              "?<br>";
+            errorMessage +=
+              "3. Check the browser console (F12) for more details.";
+          } else if (error.message.includes("API error:")) {
+            errorMessage += "Server responded with error:<br>" + error.message;
+          } else if (error.message.includes("Unexpected local API response")) {
+            errorMessage +=
+              "Local server responded in unexpected format:<br>" +
+              error.message +
+              "<br>";
+            errorMessage +=
+              "Check the browser console (F12) to see the full response.";
+          } else {
+            errorMessage +=
+              error.message +
+              "<br><br>Check the browser console (F12) for more details.";
+          }
+
+          aiResponse.innerHTML = errorMessage;
+        } finally {
+          loadingIndicator.classList.add("hidden"); // Hide loading indicator
+        }
+      }
+
+      // Function to suggest code improvements
+      async function suggestCodeImprovements() {
+        const userCode = codeEditor.value;
+        if (!userCode.trim()) {
+          aiResponse.textContent =
+            "Please write some Python code to get improvement suggestions!";
+          return;
+        }
+
+        const currentChallenge = challenges[currentLevelIndex];
+        const currentOutput = terminalContent.textContent || "No output yet";
+
+        loadingIndicator.classList.remove("hidden"); // Show loading indicator
+        aiResponse.innerHTML = "✨ Analyzing your code for improvements..."; // Clear previous AI response
+
+        const prompt = `You are a friendly AI coding mentor for kids aged 8-16 learning Python! 🤖✨
+
+🎯 CHALLENGE: "${currentChallenge?.title || "Code Review"}"
+📝 TASK: ${
+          currentChallenge?.description ||
+          "Looking at your code to make it even better!"
+        }
+
+💻 The young coder's current code:
+\`\`\`python
+${userCode}
+\`\`\`
+
+🖥️ Current output: ${currentOutput}
+
+As their coding coach, please:
+1. 🎉 Start by celebrating what they did well - every coder loves to hear what they got right!
+2. ✨ Suggest 1-2 small ways to make their code even more awesome (don't overwhelm them!)
+3. 🎯 Focus on beginner-friendly improvements like:
+   - Making variable names clearer
+   - Adding helpful comments
+   - Making code easier to read
+   - Simple ways to make it more efficient
+4. 🤔 Ask questions like "What do you think would happen if..." to get them thinking
+5. 💡 Explain WHY each suggestion helps (so they learn the reasoning!)
+6. 🎮 Keep it fun and encouraging - coding should feel like solving puzzles!
+7. 🌟 Use emojis and simple language they can understand
+
+Remember: Focus on helping them become BETTER coders, not just giving them a perfect solution. Make them excited to try your suggestions!`;
+
+        let accumulatedResponse = "";
+
+        try {
+          // Streaming callback function
+          const onToken = (token) => {
+            accumulatedResponse += token;
+            aiResponse.innerHTML = formatAIResponse(
+              accumulatedResponse
+            ).replace(/\n/g, "<br>");
+          };
+
+          const text = await callAI(prompt, onToken);
+
+          // Final update in case streaming didn't capture everything
+          if (text && text !== accumulatedResponse) {
+            aiResponse.innerHTML = formatAIResponse(text).replace(
+              /\n/g,
+              "<br>"
+            );
+          }
+        } catch (error) {
+          console.error("AI API Error:", error);
+
+          // Show detailed error information for debugging
+          let errorMessage = "AI API Error: ";
+
+          if (
+            error.message.includes("Failed to fetch") ||
+            error.message.includes("NetworkError")
+          ) {
+            errorMessage +=
+              "Cannot connect to local AI server. Please check:<br>";
+            errorMessage += "1. Is your local AI server running?<br>";
+            errorMessage +=
+              "2. Is it running on the correct URL: " +
+              AI_CONFIG.local.baseUrl +
+              "?<br>";
+            errorMessage +=
+              "3. Check the browser console (F12) for more details.";
+          } else if (error.message.includes("API error:")) {
+            errorMessage += "Server responded with error:<br>" + error.message;
+          } else if (error.message.includes("Unexpected local API response")) {
+            errorMessage +=
+              "Local server responded in unexpected format:<br>" +
+              error.message +
+              "<br>";
+            errorMessage +=
+              "Check the browser console (F12) to see the full response.";
+          } else {
+            errorMessage +=
+              error.message +
+              "<br><br>Check the browser console (F12) for more details.";
+          }
+
+          aiResponse.innerHTML = errorMessage;
+        } finally {
+          loadingIndicator.classList.add("hidden"); // Hide loading indicator
+        }
+      }
+
+      function loadChallenge(index) {
+        if (index >= 0 && index < challenges.length) {
+          currentLevelIndex = index;
+          const challenge = challenges[currentLevelIndex];
+          challengeTitle.textContent = challenge.title;
+          challengeDescription.textContent = challenge.description;
+          codeEditor.value = challenge.initialCode;
+          clearTerminal();
+          aiResponse.textContent =
+            "🎯 Awesome! New challenge loaded! I'm here to help you become an amazing coder. Remember, I won't give you the answers - I'll help you discover them yourself! Let's have fun! 🚀✨";
+          lastError = null;
+          updateNavigationButtons();
+        }
+      }
+
+      function renderLevelButtons() {
+        levelNavigation.innerHTML = "";
+        challenges.forEach((challenge, index) => {
+          const button = document.createElement("button");
+          button.textContent = challenge.id;
+          button.className = `level-button py-2 px-4 rounded-lg border border-blue-400 text-blue-700 font-semibold transition duration-200 ease-in-out transform hover:scale-105 ${
+            index === currentLevelIndex
+              ? "bg-blue-200 border-blue-600"
+              : "bg-white"
+          } ${completedLevels.has(challenge.id) ? "completed" : ""}`;
+          button.onclick = () => loadChallenge(index);
+          levelNavigation.appendChild(button);
+        });
+      }
+
+      function updateNavigationButtons() {
+        prevLevelBtn.disabled = currentLevelIndex === 0;
+        nextLevelBtn.disabled = currentLevelIndex === challenges.length - 1;
+
+        document.querySelectorAll(".level-button").forEach((btn, index) => {
+          if (index === currentLevelIndex) {
+            btn.classList.add("bg-blue-200", "border-blue-600");
+          } else {
+            btn.classList.remove("bg-blue-200", "border-blue-600");
+          }
+        });
+      }
+
+      function saveProgress() {
+        localStorage.setItem(
+          "completedLevels",
+          JSON.stringify(Array.from(completedLevels))
+        );
+      }
+
+      function loadProgress() {
+        const savedProgress = localStorage.getItem("completedLevels");
+        if (savedProgress) {
+          completedLevels = new Set(JSON.parse(savedProgress));
+        }
+      }
+
+      window.onload = function () {
+        loadProgress();
+        renderLevelButtons();
+        loadChallenge(0);
+
+        runCodeBtn.addEventListener("click", () => {
+          runPythonCode(false);
+        });
+        checkAnswerBtn.addEventListener("click", checkAnswer);
+        askAIBtn.addEventListener("click", askAIForHelp);
+        suggestImprovementsBtn.addEventListener(
+          "click",
+          suggestCodeImprovements
+        );
+        testAIBtn.addEventListener("click", testAIConnection);
+        prevLevelBtn.addEventListener("click", () => {
+          if (currentLevelIndex > 0) {
+            loadChallenge(currentLevelIndex - 1);
+          }
+        });
+        nextLevelBtn.addEventListener("click", () => {
+          if (currentLevelIndex < challenges.length - 1) {
+            loadChallenge(currentLevelIndex + 1);
+          }
+        });
+      };
+    </script>
+  </body>
+</html>

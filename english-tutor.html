@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>English Writing Tutor (Simple)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+    <style>
+      body {
+        font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
+        background: #f6f8fb;
+      }
+      textarea::-webkit-scrollbar {
+        width: 8px;
+      }
+      textarea::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 8px;
+      }
+      .prose {
+        line-height: 1.6;
+      }
+      .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.5rem 0;
+      }
+      .prose th,
+      .prose td {
+        border: 1px solid #e2e8f0;
+        padding: 0.5rem;
+        text-align: left;
+        vertical-align: top;
+      }
+      .prose thead th {
+        background: #f8fafc;
+        font-weight: 600;
+      }
+      .prose pre {
+        background: #0f172a;
+        color: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+      }
+      /* Persistent selection highlight overlay */
+      .selection-mark {
+        background: rgba(250, 204, 21, 0.45); /* amber-300 at ~45% */
+        border-radius: 0.2rem;
+        box-shadow: inset 0 0 0 1px rgba(180, 120, 0, 0.2);
+        color: transparent !important; /* prevent overlay text from showing */
+        -webkit-text-fill-color: transparent; /* Safari */
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+      /* Make the mirror text metrics match the textarea exactly */
+      #draftMirror {
+        font-family: inherit;
+        font-size: inherit;
+        line-height: inherit;
+        letter-spacing: inherit;
+        tab-size: 4;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-8">
+    <header
+      class="max-w-6xl mx-auto mb-6 flex items-center justify-between gap-4"
+    >
+      <div>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800">
+          ✍️ English Writing Tutor
+        </h1>
+        <p class="text-slate-600">
+          Write your assignment. Get helpful feedback, edits, and outlines.
+        </p>
+      </div>
+      <div
+        class="flex items-center gap-2 text-xs md:text-sm text-slate-500 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm"
+      >
+        <span>Model:</span>
+        <code id="modelInfo" class="font-mono">detecting…</code>
+        <button id="btnTest" class="text-blue-700 hover:underline">Test</button>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <section
+        class="lg:col-span-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-4"
+      >
+        <h2 class="text-xl font-semibold text-slate-800">📄 Assignment</h2>
+        <textarea
+          id="assignment"
+          rows="7"
+          class="w-full p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+          placeholder="Paste the assignment prompt here... (topic, requirements, audience, length)"
+        ></textarea>
+        <div class="flex items-center justify-between mt-2">
+          <button
+            id="btnPrevTask"
+            class="text-sm px-3 py-1.5 rounded-md border border-slate-300 text-slate-700 bg-white hover:bg-slate-50"
+          >
+            ← Previous
+          </button>
+          <div id="taskCounter" class="text-sm text-slate-600">Task 1 of 5</div>
+          <button
+            id="btnNextTask"
+            class="text-sm px-3 py-1.5 rounded-md border border-slate-300 text-slate-700 bg-white hover:bg-slate-50"
+          >
+            Next →
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            id="btnOutline"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-3 rounded-lg"
+          >
+            Create outline
+          </button>
+          <button
+            id="btnThesis"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-lg"
+          >
+            Thesis ideas
+          </button>
+          <button
+            id="btnRubricScore"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded-lg col-span-2"
+          >
+            Score with rubric
+          </button>
+        </div>
+
+        <div class="mt-2">
+          <label class="block text-sm font-medium text-slate-700"
+            >Rubric (optional)</label
+          >
+          <textarea
+            id="rubric"
+            rows="6"
+            class="w-full p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Criteria (1-5):\n- Thesis & Purpose\n- Organization\n- Evidence & Examples\n- Clarity & Style\n- Grammar & Mechanics"
+          ></textarea>
+        </div>
+
+        <div class="text-xs text-slate-500 mt-2">
+          Tip: You can leave the rubric empty. We'll use a default one.
+        </div>
+      </section>
+
+      <section class="lg:col-span-2 flex flex-col gap-6">
+        <div
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col"
+        >
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <h2 class="text-xl font-semibold text-slate-800">📝 Your draft</h2>
+            <div class="text-sm text-slate-600 flex items-center gap-3">
+              <span><strong id="wordCount">0</strong> words</span>
+              <button id="btnDownload" class="text-blue-700 hover:underline">
+                Download .txt
+              </button>
+            </div>
+          </div>
+          <div class="relative">
+            <textarea
+              id="draft"
+              rows="16"
+              class="w-full p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-normal bg-transparent relative z-10"
+              placeholder="Start writing here..."
+            ></textarea>
+            <pre
+              id="draftMirror"
+              class="absolute inset-0 z-0 p-3 whitespace-pre-wrap pointer-events-none rounded-lg text-transparent"
+            ></pre>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
+            <button
+              id="btnFeedback"
+              class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-3 rounded-lg"
+            >
+              Get feedback
+            </button>
+            <button
+              id="btnFix"
+              class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-3 rounded-lg"
+            >
+              Fix grammar & clarity
+            </button>
+            <button
+              id="btnParaphrase"
+              class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-3 rounded-lg"
+            >
+              Paraphrase selection
+            </button>
+            <button
+              id="btnShorter"
+              class="bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2 px-3 rounded-lg"
+            >
+              Write less (guide)
+            </button>
+            <button
+              id="btnLonger"
+              class="bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-3 rounded-lg"
+            >
+              Write more (guide)
+            </button>
+            <div class="col-span-2 md:col-span-3">
+              <div
+                class="flex items-stretch rounded-lg border border-slate-300 overflow-hidden"
+              >
+                <input
+                  id="askInput"
+                  type="text"
+                  placeholder="Ask the tutor a question…"
+                  class="flex-1 px-3 py-2 outline-none"
+                />
+                <button
+                  id="btnAskTutor"
+                  class="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-4"
+                >
+                  Ask tutor
+                </button>
+              </div>
+              <div
+                id="selectionInfo"
+                class="hidden mt-2 text-xs text-slate-800 bg-yellow-50 border border-yellow-200 rounded px-2 py-1 flex items-center justify-between gap-2"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="font-semibold text-yellow-900"
+                    >Using selection</span
+                  >
+                  <span
+                    id="selectionPreview"
+                    class="truncate text-yellow-900/90 min-w-0"
+                  ></span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span id="selectionCount" class="text-yellow-900/80"></span>
+                  <button
+                    id="btnClearSelection"
+                    class="text-yellow-900 hover:underline"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xl font-semibold text-slate-800">🤖 AI output</h2>
+            <div class="flex items-center gap-2">
+              <button
+                id="btnApplyEdit"
+                class="hidden bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-3 rounded-lg"
+              >
+                Replace draft with edit
+              </button>
+              <button
+                id="btnCopyOut"
+                class="text-blue-700 hover:underline text-sm"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+          <div id="aiOut" class="prose text-slate-800 min-h-[160px]"></div>
+          <div
+            id="loading"
+            class="hidden mt-3 text-center text-blue-700 font-semibold"
+          >
+            Thinking…
+          </div>
+          <div
+            id="error"
+            class="hidden mt-3 text-center text-red-600 font-semibold"
+          ></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="max-w-6xl mx-auto mt-8 text-center text-slate-500 text-sm">
+      <p>
+        Local, simple, browser‑only UI. LLM calls go to your configured
+        endpoint.
+      </p>
+    </footer>
+
+    <script>
+      const AI_CONFIG = {
+        provider: "local", // 'gemini' or 'local'
+        gemini: {
+          apiKey: "",
+          model: "gemini-2.0-flash",
+          baseUrl:
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        },
+        local: {
+          //baseUrl: 'http://127.0.0.1:1234/v1/chat/completions', // direct if CORS is ok
+          baseUrl: "http://127.0.0.1:8000/v1/chat/completions", // your proxy / LM Studio like endpoint
+          model: "openai/gpt-oss-20b",
+          apiKey: "not-needed",
+        },
+      };
+      const providerLabel = AI_CONFIG.provider === "local" ? "local" : "gemini";
+      const modelName =
+        AI_CONFIG.provider === "local"
+          ? AI_CONFIG.local.model
+          : AI_CONFIG.gemini.model || "gemini";
+      document.getElementById(
+        "modelInfo"
+      ).textContent = `${providerLabel} / ${modelName}`;
+
+      const $ = (id) => document.getElementById(id);
+      const assignmentEl = $("assignment");
+      const rubricEl = $("rubric");
+      const draftEl = $("draft");
+      const draftMirror = $("draftMirror");
+      const aiOut = $("aiOut");
+      const loadingEl = $("loading");
+      const errEl = $("error");
+      const btnApplyEdit = $("btnApplyEdit");
+
+      const STORAGE_KEYS = {
+        assignment: "english_tutor_assignment",
+        rubric: "english_tutor_rubric",
+        draft: "english_tutor_draft",
+      };
+      const SAVED_SELECTION_KEY = "english_tutor_saved_selection";
+
+      assignmentEl.value = localStorage.getItem(STORAGE_KEYS.assignment) || "";
+      rubricEl.value = localStorage.getItem(STORAGE_KEYS.rubric) || "";
+      draftEl.value = localStorage.getItem(STORAGE_KEYS.draft) || "";
+      if (assignmentEl.value.trim() === "") {
+        assignmentEl.value = `1.\tTask 1:\n\nPlease write a 200-word diary entry, impersonating the historical person of Ruby Bridges, using fitting vocabulary and grammar. You have just experienced the events of your first day at school and just recently returned to your home. Now you try to collect your thoughts about what just happened.`;
+        localStorage.setItem(STORAGE_KEYS.assignment, assignmentEl.value);
+      }
+
+      [assignmentEl, rubricEl, draftEl].forEach((el) =>
+        el.addEventListener("input", () => {
+          localStorage.setItem(STORAGE_KEYS.assignment, assignmentEl.value);
+          localStorage.setItem(STORAGE_KEYS.rubric, rubricEl.value);
+          localStorage.setItem(STORAGE_KEYS.draft, draftEl.value);
+          updateWordCount();
+        })
+      );
+
+      // Selection persistence + overlay highlight
+      const selectionInfo = $("selectionInfo");
+      const selectionPreview = $("selectionPreview");
+      const selectionCount = $("selectionCount");
+      const btnClearSelection = $("btnClearSelection");
+
+      function escapeHtml(s) {
+        return (s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function getSavedSelection() {
+        try {
+          const raw = localStorage.getItem(SAVED_SELECTION_KEY);
+          if (!raw) return null;
+          const obj = JSON.parse(raw);
+          if (
+            typeof obj?.start === "number" &&
+            typeof obj?.end === "number" &&
+            obj.end > obj.start &&
+            typeof obj?.text === "string"
+          ) {
+            return obj;
+          }
+        } catch {}
+        return null;
+      }
+
+      function updateSelectionUI() {
+        const saved = getSavedSelection();
+        const hasSel = !!saved;
+        selectionInfo?.classList.toggle("hidden", !hasSel);
+        if (!hasSel) {
+          if (draftMirror) draftMirror.innerHTML = "";
+          return;
+        }
+        const text = saved.text || "";
+        selectionPreview.textContent =
+          text.length > 120 ? text.slice(0, 117) + "…" : text;
+        const wc = (text.trim().match(/\b\w+\b/g) || []).length;
+        selectionCount.textContent =
+          wc > 0 ? `${wc} words` : `${text.length} chars`;
+        renderSelectionOverlay(saved.start, saved.end);
+      }
+
+      function saveSelection(start, end) {
+        if (start == null || end == null || end <= start) return;
+        const text = draftEl.value.substring(start, end);
+        const payload = { start, end, text };
+        localStorage.setItem(SAVED_SELECTION_KEY, JSON.stringify(payload));
+        updateSelectionUI();
+      }
+
+      function clearSavedSelection() {
+        localStorage.removeItem(SAVED_SELECTION_KEY);
+        updateSelectionUI();
+      }
+
+      function renderSelectionOverlay(start, end) {
+        if (!draftMirror) return;
+        const full = draftEl.value || "";
+        if (
+          typeof start !== "number" ||
+          typeof end !== "number" ||
+          end <= start
+        ) {
+          draftMirror.innerHTML = "";
+          draftMirror.style.transform = "translateY(0)";
+          return;
+        }
+        const before = escapeHtml(full.slice(0, start));
+        const sel = escapeHtml(full.slice(start, end));
+        const after = escapeHtml(full.slice(end));
+        draftMirror.innerHTML = `${before}<mark class="selection-mark">${sel}</mark>${after}`;
+        draftMirror.style.transform = `translateY(${-draftEl.scrollTop}px)`;
+      }
+
+      // Track user-created selections and persist them
+      function maybeCaptureSelection() {
+        const start = draftEl.selectionStart;
+        const end = draftEl.selectionEnd;
+        if (
+          typeof start === "number" &&
+          typeof end === "number" &&
+          end > start
+        ) {
+          saveSelection(start, end);
+        }
+      }
+
+      draftEl.addEventListener("mouseup", () => {
+        setTimeout(maybeCaptureSelection, 0);
+      });
+      draftEl.addEventListener("keyup", () => {
+        maybeCaptureSelection();
+      });
+      draftEl.addEventListener("select", () => {
+        maybeCaptureSelection();
+      });
+
+      // Keep overlay aligned on scroll
+      draftEl.addEventListener("scroll", () => {
+        const saved = getSavedSelection();
+        if (saved) renderSelectionOverlay(saved.start, saved.end);
+      });
+
+      // Clear saved selection on content edits (indices no longer valid)
+      draftEl.addEventListener("input", () => {
+        clearSavedSelection();
+      });
+
+      btnClearSelection?.addEventListener("click", (e) => {
+        e.preventDefault();
+        clearSavedSelection();
+      });
+
+      function getWordCount(text = draftEl.value) {
+        return (text.trim().match(/\b\w+\b/g) || []).length;
+      }
+      function updateWordCount() {
+        $("wordCount").textContent = getWordCount();
+      }
+      updateWordCount();
+
+      const TASK_LIST = [
+        `1.\tTask 1:\n\nPlease write a 200-word diary entry, impersonating the historical person of Ruby Bridges, using fitting vocabulary and grammar. You have just experienced the events of your first day at school and just recently returned to your home. Now you try to collect your thoughts about what just happened.`,
+        `2.\tTask 2:\n\nIn the following, you will be tasked to write a 250-word letter contacting Amelia, an exchange student that will be visiting your country in a few-weeks’ time coming from England. Amelia has little to no knowledge about the region she will be visiting soon, which is why it is your task to detail activities and sights in your region. Use fitting vocabulary and grammar and follow the usual structure of a letter.`,
+        `3.\tTask 3:\n\nFor your last task, you will now be writing an article about a type of sport of your liking. These can range from e-sports, over Formula 1 to soccer. The text should not be longer than 300 words and use fitting formal vocabulary and grammar. The typical structure of an article should be followed.`,
+        `4.\tTask 4:\n\nWrite a 200-word e-mail messaging your schools’ headmaster about possible changes to better and diversify your school. The ideas must make sense and serve a purpose, which should be detailed in your e-mail. It is your goal to convince your headmaster to actually make the changes you are suggesting. Explain at least 2 possible changes.`,
+        `5.\tTask 5:\n\nYou have recently received a letter from a friend of yours living in the United States of America. In that letter, he is asking whether you could provide him with a 300-word article explaining common festivals or traditions from your country. “I think 3 events should be enough…” is what he wrote. `,
+      ];
+      const btnPrevTask = $("btnPrevTask");
+      const btnNextTask = $("btnNextTask");
+      const taskCounter = $("taskCounter");
+      const TASK_INDEX_KEY = "english_tutor_task_index";
+      const draftKeyForTask = (i) => `english_tutor_draft_task_${i}`;
+
+      let currentTaskIndex = parseInt(
+        localStorage.getItem(TASK_INDEX_KEY) || "0",
+        10
+      );
+      if (
+        Number.isNaN(currentTaskIndex) ||
+        currentTaskIndex < 0 ||
+        currentTaskIndex >= TASK_LIST.length
+      ) {
+        currentTaskIndex = 0;
+      }
+
+      function renderTask() {
+        assignmentEl.value = TASK_LIST[currentTaskIndex];
+        const savedDraft =
+          localStorage.getItem(draftKeyForTask(currentTaskIndex)) || "";
+        draftEl.value = savedDraft;
+        taskCounter.textContent = `Task ${currentTaskIndex + 1} of ${
+          TASK_LIST.length
+        }`;
+        btnPrevTask.disabled = currentTaskIndex === 0;
+        btnNextTask.disabled = currentTaskIndex === TASK_LIST.length - 1;
+        updateWordCount();
+      }
+      function saveCurrentTaskDraft() {
+        localStorage.setItem(draftKeyForTask(currentTaskIndex), draftEl.value);
+      }
+      renderTask();
+      draftEl.addEventListener("input", saveCurrentTaskDraft);
+      btnPrevTask.addEventListener("click", () => {
+        if (currentTaskIndex <= 0) return;
+        saveCurrentTaskDraft();
+        currentTaskIndex -= 1;
+        localStorage.setItem(TASK_INDEX_KEY, String(currentTaskIndex));
+        renderTask();
+      });
+      btnNextTask.addEventListener("click", () => {
+        if (currentTaskIndex >= TASK_LIST.length - 1) return;
+        saveCurrentTaskDraft();
+        currentTaskIndex += 1;
+        localStorage.setItem(TASK_INDEX_KEY, String(currentTaskIndex));
+        renderTask();
+      });
+
+      function setLoading(v) {
+        loadingEl.classList.toggle("hidden", !v);
+      }
+      function setError(msg) {
+        errEl.textContent = msg || "";
+        errEl.classList.toggle("hidden", !msg);
+      }
+      function showApplyEdit(show) {
+        btnApplyEdit.classList.toggle("hidden", !show);
+      }
+
+      function formatAI(md) {
+        try {
+          const rawHtml = marked.parse(md, { gfm: true, breaks: true });
+          return DOMPurify.sanitize(rawHtml);
+        } catch (err) {
+          return (md || "").replace(/\n\n/g, "<br><br>").replace(/\n/g, "<br>");
+        }
+      }
+
+      function downloadTxt(filename, text) {
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      async function callAI(prompt, { stream = true } = {}) {
+        setError("");
+        if (AI_CONFIG.provider === "gemini") {
+          const body = {
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+          };
+          const res = await fetch(
+            `${AI_CONFIG.gemini.baseUrl}?key=${AI_CONFIG.gemini.apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            }
+          );
+          if (!res.ok) {
+            throw new Error(`Gemini error ${res.status}: ${await res.text()}`);
+          }
+          const data = await res.json();
+          const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          return txt;
+        }
+
+        const payload = {
+          model: AI_CONFIG.local.model,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.3,
+          max_tokens: 1200,
+          stream,
+        };
+        const res = await fetch(AI_CONFIG.local.baseUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${AI_CONFIG.local.apiKey}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          throw new Error(`API error ${res.status}: ${await res.text()}`);
+        }
+        if (!stream) {
+          const j = await res.json();
+          return j?.choices?.[0]?.message?.content || "";
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let full = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            const data = line.replace("data:", "").trim();
+            if (!data || data === "[DONE]") continue;
+            try {
+              const json = JSON.parse(data);
+              const delta = json?.choices?.[0]?.delta?.content;
+              if (delta) {
+                full += delta;
+                aiOut.innerHTML = formatAI(full);
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+        return full;
+      }
+
+      function defaultRubric() {
+        return `Criteria (1-5)\n- Thesis & Purpose\n- Organization\n- Evidence & Examples\n- Clarity & Style\n- Grammar & Mechanics`;
+      }
+
+      function feedbackPrompt() {
+        const a =
+          assignmentEl.value ||
+          "General writing task for a non‑technical audience.";
+        const d = draftEl.value || "(empty draft)";
+        const wc = getWordCount(draftEl.value);
+        return `You are an English writing tutor. Give concise, constructive feedback.\nAssignment: ${a}\nDraft word count: ${wc} (precomputed — if you mention word count, use this exact number; do not recalculate.)\nDraft:\n"""\n${d}\n"""\nReturn sections:\n- Strengths (3 bullets)\n- Issues to fix (3-6 bullets)\n- Next steps (3 bullets).\nKeep it under 180 words. Avoid rewriting the whole piece. Do not include a separate 'Word count' line.`;
+      }
+
+      function fixPrompt() {
+        const a = assignmentEl.value || "General writing task.";
+        const d = draftEl.value;
+        return `Edit the draft for grammar, clarity, and concision. Keep the student's voice and meaning.\nAssignment: ${a}\nReturn only the edited draft text. No explanations.\nDraft:\n"""\n${d}\n"""`;
+      }
+
+      function outlinePrompt() {
+        const a = assignmentEl.value || "Write a short essay.";
+        return `Create a clear outline for this assignment. Include: Thesis, 3-5 body points with brief notes, and a conclusion.\nAssignment:\n${a}`;
+      }
+
+      function thesisPrompt() {
+        const a = assignmentEl.value || "Write a short essay.";
+        return (
+          `Give three distinct thesis statements that answer the assignment. Each should be specific and arguable.` +
+          `\nAssignment:\n${a}`
+        );
+      }
+
+      function paraphrasePrompt(sel) {
+        return `Paraphrase the text to be clearer and simpler while preserving meaning. Return only the rewritten text.\nText:\n"""\n${sel}\n"""`;
+      }
+
+      function shorterPrompt() {
+        const d = draftEl.value;
+        return `Rewrite this to be about 25% shorter, clearer, and more direct. Keep the tone neutral. Return only the rewritten text.\nText:\n"""\n${d}\n"""`;
+      }
+
+      function writeLessGuidePrompt() {
+        const a = assignmentEl.value || "General writing task.";
+        const d = draftEl.value || "(empty)";
+        const wc = getWordCount(draftEl.value);
+        return `You are a writing coach. Help the student learn to be concise without rewriting the draft for them.
+Assignment: ${a}
+Draft word count: ${wc} (precomputed — if you mention word count, use this exact number; do not recalculate.)
+Draft:\n"""\n${d}\n"""
+Provide:
+- 3–5 specific opportunities to cut or combine (quote short snippets and say what to remove or compress and why).
+- A short checklist for concision (e.g., remove fillers, prefer active verbs, cut redundancies).
+- 2–3 example sentence rewrites to demonstrate the technique (keep them brief; do not rewrite the whole draft).
+Keep it under 170 words. Do not output a full rewritten draft.`;
+      }
+
+      function writeMoreGuidePrompt() {
+        const a = assignmentEl.value || "General writing task.";
+        const d = draftEl.value || "(empty)";
+        const wc = getWordCount(draftEl.value);
+        return `You are a writing coach. Help the student thoughtfully expand their draft without writing it for them.
+Assignment: ${a}
+Draft word count: ${wc} (precomputed — if you mention word count, use this exact number; do not recalculate.)
+Draft:\n"""\n${d}\n"""
+Provide:
+- 3–5 concrete spots to develop (quote short snippets and suggest what details, examples, evidence, or explanation to add).
+- 4–6 guiding questions they can answer to expand content.
+- A brief outline showing how an expanded version could be structured (no full paragraphs).
+Keep it under 180 words. Do not output a full rewritten draft.`;
+      }
+
+      function rubricPrompt() {
+        const a = assignmentEl.value || "General writing task.";
+        const r = rubricEl.value || defaultRubric();
+        const d = draftEl.value || "(empty)";
+        return `Score the draft with the rubric (1-5 for each criterion). Give one sentence of justification per criterion, and one overall suggestion.\nAssignment:\n${a}\nRubric:\n${r}\nDraft:\n"""\n${d}\n"""`;
+      }
+
+      function generalAskPrompt(sel) {
+        const a = assignmentEl.value || "General writing task.";
+        if (sel && sel.trim()) {
+          return `You are an English writing tutor. The student has a draft. Answer their question briefly and clearly.\nAssignment: ${a}\nSelected text:\n"""\n${sel}\n"""`;
+        }
+        const d = draftEl.value;
+        return `You are an English writing tutor. The student has a draft. Answer their question briefly and clearly.\nAssignment: ${a}\nDraft:\n"""\n${d}\n"""`;
+      }
+
+      async function runWith(promptBuilder, { applyEdit = false } = {}) {
+        try {
+          setLoading(true);
+          showApplyEdit(false);
+          aiOut.innerHTML = "";
+          const prompt = promptBuilder();
+          const text = await callAI(prompt, {
+            stream: AI_CONFIG.provider === "local",
+          });
+          if (!text && aiOut.innerHTML.trim() === "") {
+            aiOut.textContent = "(no response)";
+          }
+          if (applyEdit) {
+            showApplyEdit(true);
+            btnApplyEdit.onclick = () => {
+              draftEl.value = text || aiOut.textContent;
+              draftEl.dispatchEvent(new Event("input"));
+              showApplyEdit(false);
+            };
+          }
+        } catch (err) {
+          setError(err.message || String(err));
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      $("btnFeedback").addEventListener("click", () => runWith(feedbackPrompt));
+      $("btnFix").addEventListener("click", () =>
+        runWith(fixPrompt, { applyEdit: true })
+      );
+      $("btnOutline").addEventListener("click", () => runWith(outlinePrompt));
+      $("btnThesis").addEventListener("click", () => runWith(thesisPrompt));
+      $("btnShorter").addEventListener("click", () =>
+        runWith(writeLessGuidePrompt, { applyEdit: false })
+      );
+      $("btnLonger").addEventListener("click", () =>
+        runWith(writeMoreGuidePrompt, { applyEdit: false })
+      );
+      $("btnRubricScore").addEventListener("click", () =>
+        runWith(rubricPrompt)
+      );
+      const askInput = $("askInput");
+      const btnAskTutor = $("btnAskTutor");
+      if (btnAskTutor && askInput) {
+        const submitAsk = async () => {
+          const q = askInput.value.trim();
+          if (!q) return;
+          let sel = draftEl.value.substring(
+            draftEl.selectionStart,
+            draftEl.selectionEnd
+          );
+          if (!sel) {
+            const saved = getSavedSelection();
+            sel = saved?.text || "";
+          }
+          await runWith(() => {
+            if (sel && sel.trim()) {
+              const a = assignmentEl.value || "General writing task.";
+              return (
+                `You are an English writing tutor. Use the assignment for context only. Do not add or rewrite anything beyond the selected text.\n` +
+                `Assignment:\n${a}\n\n` +
+                `Selected text:\n"""\n${sel}\n"""\n\n` +
+                `Student question:\n${q}\n\n` +
+                `Return rules:\n` +
+                `- Only address the selected text.\n` +
+                `- If rewriting, return only one rewritten version of the selected text, nothing else.\n` +
+                `- Otherwise, answer in <= 2 brief sentences focused strictly on the selection.`
+              );
+            }
+            return generalAskPrompt("") + `\n\nStudent question: ${q}`;
+          });
+        };
+        btnAskTutor.addEventListener("click", submitAsk);
+        askInput.addEventListener("keydown", async (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            await submitAsk();
+          }
+        });
+      }
+
+      $("btnParaphrase").addEventListener("click", async () => {
+        let sel = draftEl.value.substring(
+          draftEl.selectionStart,
+          draftEl.selectionEnd
+        );
+        if (!sel) {
+          const saved = getSavedSelection();
+          sel = saved?.text || "";
+        }
+        if (!sel) {
+          setError("Select some text in your draft first.");
+          return;
+        }
+        await runWith(() => paraphrasePrompt(sel), { applyEdit: false });
+      });
+
+      $("btnCopyOut").addEventListener("click", () => {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = aiOut.innerText; // copy plain text
+        navigator.clipboard.writeText(tmp.innerText || aiOut.textContent || "");
+      });
+
+      $("btnDownload").addEventListener("click", () => {
+        downloadTxt("draft.txt", draftEl.value || "");
+      });
+
+      $("btnTest").addEventListener("click", async () => {
+        try {
+          setLoading(true);
+          aiOut.textContent = "Testing connection...";
+          showApplyEdit(false);
+          const msg = "Reply with: Connection successful!";
+          const txt = await callAI(msg, { stream: false });
+          aiOut.textContent = txt || "(no response)";
+        } catch (err) {
+          setError(err.message || String(err));
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      // Initialize saved selection state and overlay on load
+      (function initSelection() {
+        updateSelectionUI();
+      })();
+    </script>
+  </body>
+</html>
